@@ -3,7 +3,7 @@ const apiCart = `http://localhost:3000/cart`;
 
 const token = sessionStorage.getItem('token');
 let path = window.location.pathname
-console.log('path:', path);
+console.log('🚀 ~ path:', path);
 
 const container = document.querySelector('#container');
 
@@ -37,36 +37,6 @@ const showSkeleton = (count = 6) => {
             </div>
         `;
         container.appendChild(skeletonCard);
-    }
-};
-
-const myfunc = async () => {
-    showSkeleton(6); // Show skeletons while loading
-    let cartDisplay = document.querySelector(".cartDisplay");
-
-    try {
-        const [res1, res2] = await Promise.all([
-            fetch(apiProducts),
-            fetch(apiCart)
-        ]);
-        // we have to apply loader into this....
-        console.log('res1:', res1.ok);
-        const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
-        let data = await data1;
-        cartLengths = data2.length;
-        if (cartLengths) {
-            cartDisplay.style.display = 'block'
-            cartDisplay.textContent = cartLengths;
-        }
-        else {
-            cartDisplay.style.display = 'none'
-            cartDisplay.style.opacity = 0;
-        }
-
-        allProducts = data;
-        renderTheUI(allProducts);
-    } catch (error) {
-        console.error("Error fetching products:", error);
     }
 };
 
@@ -127,13 +97,9 @@ const addToCart = async (id) => {
             alert("Added to cart ✔");
         }
     } catch (error) {
-        console.log("error:", error);
+        console.log("🚀 ~ error:", error);
     }
 };
-// Authorization: `Bearer ${token}`,
-
-
-
 
 const searchFunc = async () => {
     const query = document.querySelector('#search').value.trim().toLowerCase();
@@ -157,15 +123,69 @@ const searchFunc = async () => {
     }
 };
 
-let paginationApi = `http://localhost:3000/product?_limit=10&_page=1`;
-// const paginationFunc = () => {};
+let pages = 1;
+let pageLimits = 10;
 
-const incrementBtn = async () => {
+const pagiDiv = document.querySelector("#pagination");
+
+pagiDiv.innerHTML = `
+<button class="btns" id="decrementBtn">-</button>
+<span id="countPage">${pages}</span>
+<button class="btns" id="incrementBtn">+</button>
+`
+
+
+const paginationFetch = async (limit, page) => {
+    let paginationApi = `http://localhost:3000/product?_limit=${limit}&_page=${page}`;
+    let totalpageApi = `http://localhost:3000/product`;
+
+    showSkeleton(6); // Show skeletons while loading
+    let cartDisplay = document.querySelector(".cartDisplay");
+
     try {
-        let res = await fetch(paginationApi);
-        let data = await res.json();
-        console.log('data:', data);
+        const [res1, res2, res3] = await Promise.all([
+            fetch(paginationApi),
+            fetch(apiCart),
+            fetch(totalpageApi)
+        ]);
+        // we have to apply loader into this....
+        console.log('🚀 ~ res1:', res1.ok);
+        const [data1, data2, data3] = await Promise.all([res1.json(), res2.json(), res3.json()]);
+        let data = await data1;
+        cartLengths = data2.length;
+        
+        //to get total items
+        var totalPageItem = data3.length;
+        console.log(totalPageItem);
+        
+        if (cartLengths) {
+            cartDisplay.style.display = 'block'
+            cartDisplay.textContent = cartLengths;
+        }
+        else {
+            cartDisplay.style.display = 'none'
+            cartDisplay.style.opacity = 0;
+        }
+
+        allProducts = data;
+        renderTheUI(allProducts);
     } catch (error) {
-        console.log('error:', error);
+        console.error("Error fetching products:", error);
     }
 }
+
+const countPages = document.querySelector("#countPage");
+document.querySelector('#incrementBtn').addEventListener("click", () => {
+    // console.log(totalPageItem);
+    pages++;
+    countPages.innerText = pages;
+    paginationFetch(pageLimits, pages)
+})
+document.querySelector('#decrementBtn').addEventListener("click", () => {
+    console.log(countPages.innerText);
+    if (parseInt(countPages.innerText) > 1) {
+        pages--;
+        countPages.innerText = pages;
+        paginationFetch(pageLimits, pages);
+    }
+})
